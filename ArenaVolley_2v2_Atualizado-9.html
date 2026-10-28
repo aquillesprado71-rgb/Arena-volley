@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#07182a">
+<title>Arena Volley</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07182a;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ui{position:absolute;inset:0;pointer-events:none}
+.top{position:absolute;top:max(8px,env(safe-area-inset-top));left:9px;right:9px;display:flex;justify-content:space-between;align-items:flex-start;gap:7px}
+.pill{background:#061426d9;border:1px solid #8bdcff45;border-radius:13px;padding:7px 10px;box-shadow:0 5px 20px #0003}
+.brand{font-size:11px;font-weight:950;letter-spacing:.12em;color:#54e5ff}
+.sub{font-size:9px;color:#b8cee0}
+.score{font-size:23px;font-weight:950;line-height:1.05;text-align:center;white-space:nowrap}
+#spikeStats{display:none;position:absolute;top:160px;left:50%;transform:translateX(-50%);z-index:2;min-width:205px;padding:9px 13px;border:1px solid #7cecffaa;border-radius:14px;background:#061426eF;box-shadow:0 0 18px #29cfff55;text-align:center;font-size:12px;font-weight:900;line-height:1.55;white-space:nowrap;color:#eafcff}
+#spikeStats strong{color:#70eaff;font-size:15px}
+#status{position:absolute;top:76px;left:50%;transform:translateX(-50%);background:#061426d9;border:1px solid #8bdcff30;border-radius:20px;padding:7px 12px;font-size:12px;font-weight:800;text-align:center;max-width:92vw;white-space:nowrap}
+#playerMeters{position:absolute;top:104px;left:9px;right:9px;display:grid;grid-template-columns:1fr 1fr;gap:5px;pointer-events:none;z-index:2}
+.meterCard{background:#061426e8;border:1px solid #8bdcff55;border-radius:10px;padding:5px 7px;min-width:0;box-shadow:0 3px 12px #0004}
+.meterHead{display:flex;justify-content:space-between;gap:4px;font-size:9px;font-weight:900;color:#eaf7ff;margin-bottom:3px}.meterTrack{height:7px;background:#24364a;border-radius:8px;overflow:hidden;border:1px solid #ffffff20}.meterFill{height:100%;width:0%;border-radius:8px;transition:width .12s linear}.forceFill{background:linear-gradient(90deg,#ffb347,#ff5252)}.jumpFill{background:linear-gradient(90deg,#45e6ff,#8d7bff)}.defFill{background:linear-gradient(90deg,#5dff9a,#ffcf4d,#ff4d62)}
+#controls{position:absolute;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;justify-content:space-between;padding:0 10px;gap:7px}
+#pad{display:grid;grid-template-columns:repeat(3,43px);grid-template-rows:repeat(2,43px);gap:5px;pointer-events:auto}
+button{border:1px solid #c9f4ff70;background:#102e4bea;color:white;border-radius:13px;min-width:47px;min-height:45px;padding:5px 6px;font-weight:900;font-size:10px;box-shadow:0 3px 0 #020a14;user-select:none}
+button:active,.held{transform:translateY(2px);background:#087fa0;box-shadow:0 1px 0 #020a14}
+.move{font-size:18px;background:#0a2038ee}
+#actions{display:grid;grid-template-columns:repeat(2,minmax(57px,70px));gap:6px;pointer-events:auto}
+.action{background:#075d7aee;border-color:#70e9ff}
+#travelServeBtn{position:absolute;right:12px;bottom:190px;z-index:4;width:82px;min-width:82px;min-height:44px;padding:6px 4px;border-radius:13px;font-size:10px;line-height:1.15;box-shadow:0 4px 12px #0006}
+#setterSkill{position:absolute;left:10px;top:57%;transform:translateY(-50%);width:76px;height:76px;min-width:76px;min-height:76px;padding:6px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;pointer-events:auto;z-index:3;background:radial-gradient(circle at 35% 25%,#277d9a,#092c4a 72%);border:2px solid #a7efff;box-shadow:0 0 0 3px #06142688,0 0 18px #39d9ff77;font-size:22px;line-height:1}
+#setterSkill small{font-size:8px;line-height:1.1;letter-spacing:.02em}
+#setterSkill:active{transform:translateY(calc(-50% + 2px));background:#087f9f}
+.attack{background:#96394bee;border-color:#ff9cac}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,#06142655,#061426e8)}
+.card{width:min(390px,100%);border:1px solid #74e5ff66;border-radius:23px;padding:22px;background:#07192bf2;box-shadow:0 20px 65px #0008;text-align:center}
+.kicker{color:#7aeaff;font-size:10px;font-weight:900;letter-spacing:.16em}
+h1{font-size:clamp(34px,10vw,46px);line-height:.96;margin:10px 0;color:#fff;letter-spacing:.02em}
+h1 span{color:#4ee2ff}
+.card p{font-size:13px;line-height:1.5;color:#c5d7e8}
+.primary{width:100%;height:50px;font-size:14px;background:#087f9f;border-color:#8cf0ff;margin-top:8px}
+#championshipBtn{background:linear-gradient(100deg,#9a5b16,#6840a8);border-color:#ffd68b}
+.secondary{width:100%;margin-top:7px;background:#13283d}
+#pause{pointer-events:auto;min-width:40px;min-height:39px}
+#help{display:none;text-align:left;background:#0b2036;border-radius:14px;padding:10px;margin-top:10px;font-size:12px;line-height:1.6;color:#d5e7f5}
+#economy{position:absolute;top:52px;left:9px;pointer-events:auto;display:flex;gap:5px;flex-wrap:wrap;max-width:72%}
+#economy .pill{font-size:10px;padding:5px 8px}
+#shopBtn{pointer-events:auto;position:absolute;right:9px;top:52px;min-height:34px;background:#7a4ac7;border-color:#d8b8ff}
+#shop{display:none;position:absolute;inset:0;z-index:5;overflow:auto;pointer-events:auto;background:#04101df2;padding:18px 12px max(18px,env(safe-area-inset-bottom));}
+.shopCard{max-width:480px;margin:0 auto;border:1px solid #9f8bff88;border-radius:20px;padding:17px;background:linear-gradient(160deg,#172447,#071525);box-shadow:0 15px 45px #0008}
+.shopTitle{font-size:26px;font-weight:950;margin:0 0 5px}.shopMuted{font-size:12px;color:#b7c9e3;line-height:1.45}
+.wallet{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}.wallet span{background:#091326;border:1px solid #6b87bd66;padding:7px 9px;border-radius:10px;font-size:12px;font-weight:800}
+.shopActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.shopActions button{min-height:44px;font-size:11px}.shopWide{grid-column:1/-1}
+#recruitResult{margin-top:12px;border:1px solid #d6bdff66;background:#100f2c;border-radius:13px;padding:12px;min-height:50px;font-size:13px;line-height:1.5}
+#lineup{margin-top:14px;padding:12px;border:1px solid #70e6ff66;border-radius:14px;background:#0a1a30}.lineupTitle{font-size:15px;font-weight:950;margin-bottom:5px}.lineupSlots{display:grid;grid-template-columns:1fr;gap:6px;margin-top:9px}.lineupSlot{padding:8px;border-radius:10px;background:#101f38;border:1px solid #ffffff20;font-size:12px}.lineupSlot b{color:#7fe8ff}.assignButtons{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.assignButtons button{min-height:29px;padding:4px 7px;font-size:9px;background:#12344a}.lineupNote{font-size:11px;color:#b7c9e3;line-height:1.45;margin-top:7px}#roster{margin-top:12px;font-size:12px;line-height:1.7;color:#d5e7f5}.upgradeBox{margin-top:12px;padding:12px;border:1px solid #6bd9ff55;border-radius:14px;background:#071326}.upgradeTitle{font-size:15px;font-weight:950;margin-bottom:6px}.playerRow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #ffffff16}.playerRow:last-child{border-bottom:0}.playerMeta{flex:1;min-width:0}.playerMeta small{display:block;color:#b7c9e3;line-height:1.5}.playerRow button{min-width:82px;min-height:34px;font-size:10px}.equippedTag{color:#79f0bd;font-weight:900}
+@media(max-width:370px){#economy{max-width:68%}#economy .pill{font-size:9px;padding:4px 6px}.shopCard{padding:13px}}
+@media(max-width:370px){#pad{grid-template-columns:repeat(3,36px);grid-template-rows:repeat(2,39px)}#actions{grid-template-columns:repeat(2,56px)}button{font-size:9px}.top .pill{padding:6px 8px}}
+</style>
+</head>
+<body>
+<canvas id="court"></canvas>
+<div id="ui">
+ <div class="top">
+  <div class="pill"><div class="brand">ARENA VOLLEY</div><div class="sub">MODO OFFLINE</div></div>
+  <div class="pill"><div class="sub">SEU TIME 2　:　2 CPU</div><div class="score"><span id="scoreA">0</span> : <span id="scoreB">0</span></div></div>
+  <button id="pause">Ⅱ</button>
+ </div>
+ <div id="economy">
+  <div class="pill">🪙 <span id="coins">0</span></div><div class="pill">⭐ Nv. <span id="level">1</span> · XP <span id="xp">0</span></div><div class="pill">🎟️ <span id="tickets">0</span></div>
+ </div>
+ <button id="shopBtn">LOJA</button>
+ <div id="status">Toque em JOGAR para começar</div>
+ <div id="playerMeters">
+  <div class="meterCard"><div class="meterHead"><span>💥 FORÇA</span><span id="forceLevel">Nv. 0</span></div><div class="meterTrack"><div id="forceFill" class="meterFill forceFill"></div></div></div>
+  <div class="meterCard"><div class="meterHead"><span>🦘 PULO</span><span id="jumpLevelHud">Nv. 0</span></div><div class="meterTrack"><div id="jumpFill" class="meterFill jumpFill"></div></div></div>
+  <div class="meterCard"><div class="meterHead"><span>🛡️ DEFESA VOCÊ</span><span id="youDefenseText">100%</span></div><div class="meterTrack"><div id="youDefenseFill" class="meterFill defFill" style="width:100%"></div></div></div>
+  <div class="meterCard"><div class="meterHead"><span>🛡️ DEFESA CPU</span><span id="cpuDefenseText">100%</span></div><div class="meterTrack"><div id="cpuDefenseFill" class="meterFill defFill" style="width:100%"></div></div></div>
+ </div>
+ <div id="spikeStats">⚡ CORTADA!<br><strong id="spikeHeight">Altura: -- m</strong><br><strong id="spikeSpeed">Velocidade: -- km/h</strong></div>
+ <div id="controls">
+  <div id="pad">
+   <span></span><button class="move" data-move="up">▲</button><span></span>
+   <button class="move" data-move="left">◀</button><button class="move" data-move="down">▼</button><button class="move" data-move="right">▶</button>
+  </div>
+  <div id="actions">
+   <button class="action" data-act="receive">RECEPÇÃO</button>
+   <button class="action" data-act="set">LEVANTAR</button>
+    <button class="attack" data-act="jump">PULAR</button>
+   <button class="attack" data-act="spike">CORTADA</button>
+   <button class="attack" data-act="travelServe">🔥 SAQUE VIAGEM</button>
+  </div>
+ </div>
+ <button id="setterSkill" data-act="ability" aria-label="Ativar habilidade do levantador">✨<small>PASSE<br>MILIMÉTRICO</small></button>
+ <button id="travelServeBtn" class="attack" data-act="travelServe">🔥 SAQUE<br>VIAGEM</button>
+</div>
+<div id="start">
+ <div class="card">
+  <div class="kicker">VÔLEI • ARCADE • OFFLINE</div>
+  <h1>ARENA<br><span>VOLLEY</span></h1>
+  <p>Modo 2v2: controle Kaito e jogue com um levantador aliado que prepara a bola. A CPU também tem dois jogadores.</p>
+  <div style="margin:10px 0;padding:8px;border:1px solid #38d9ff55;border-radius:12px;color:#dff8ff;font-weight:800">MODO DE JOGO: <span>2v2 — Kaito + Levantador S</span><div style="font-size:11px;font-weight:500;margin-top:4px">Seu levantador ajuda automaticamente nas jogadas.</div></div><button class="primary" id="play">JOGAR PARTIDA</button><button class="primary" id="championshipBtn">🏆 CAMPEONATO · 3 PARTIDAS</button>
+  <button class="secondary" id="openShopStart">🛍️ ABRIR LOJA</button>
+  <button class="secondary" id="showHelp">COMO JOGAR</button>
+  <div id="help">• Use as setas para se mover.<br>• RECEPÇÃO: defende bolas próximas.<br>• LEVANTAR: prepara a bola para o ataque.<br>• PULAR: apenas salta. Toque em CORTADA enquanto estiver no ar para atacar.<br>• CORTADA: ataque quando a bola estiver alta e perto de você.<br>• SAQUE VIAGEM: botão separado acima da área de controles, sem alterar os quatro botões habituais; toque durante seu saque para lançar a bola para cima; depois toque PULAR e CORTADA no ar para bater nela. O Ataque aumenta a força.<br>• HABILIDADE S: equipe Sora como levantador e toque em HABILIDADE S quando a bola estiver no seu lado. O Passe Milimétrico coloca a bola na frente da rede e fortalece a próxima cortada do Kaito.</div>
+  <p style="font-size:10px;color:#89a7c2;margin-bottom:0">Protótipo leve para navegador Android</p>
+ </div>
+</div>
+<div id="shop">
+ <div class="shopCard">
+  <div class="kicker">ARENA VOLLEY • CENTRAL DE RECRUTAMENTO</div>
+  <div class="shopTitle">🛍️ Loja & Elenco</div>
+  <div class="shopMuted">Vença partidas para receber moedas, XP e 1 bilhete. Use um bilhete para recrutar um atleta aleatório. O progresso fica salvo neste navegador.</div>
+  <div class="wallet"><span>🪙 <b id="shopCoins">0</b></span><span>⭐ XP <b id="shopXp">0</b></span><span>🎟️ Bilhetes <b id="shopTickets">0</b></span></div>
+  <div class="shopMuted">Garantia S: <b id="pity">0/50</b> recrutamentos. Ao chegar a 50, o próximo recrutamento garante um atleta S.</div>
+  <div class="shopActions"><button id="recruit" class="primary">🎟️ RECRUTAR (1 BILHETE)</button><button id="buyTicket" class="secondary">COMPRAR BILHETE · 300 🪙</button><button id="closeShop" class="secondary">VOLTAR AO JOGO</button><button id="playAgain" class="primary">JOGAR PARTIDA</button></div>
+  <div id="recruitResult">Seu próximo atleta vai aparecer aqui.</div>
+  <div class="upgradeBox"><div class="upgradeTitle">⚡ Melhorar jogador equipado</div><div class="shopMuted" id="equippedStats">Ataque e pulo do jogador selecionado.</div><div class="shopActions"><button id="upgradeAttack" class="attack">💥 + ATAQUE</button><button id="upgradeJump" class="action">🦘 + PULO</button></div><div class="shopMuted">O custo aumenta a cada nível. Melhorias são individuais para cada jogador.</div></div>
+  <div id="lineup"><div class="lineupTitle">🏐 ESCALAÇÃO DO TIME</div><div class="shopMuted">Monte seu trio: atacante, levantador e central.</div><div id="lineupSlots" class="lineupSlots"></div><div class="lineupNote">Esta é a primeira etapa da escalação: os três atletas ficam salvos no seu time. A partida usa dois jogadores por equipe. O levantador ajuda nas bolas próximas e o central pode bloquear automaticamente.</div></div>
+  <div id="roster"><b>ELENCO</b><br>Carregando jogadores...</div>
+ </div>
+</div>
+<script>
+(()=>{
+const canvas=document.querySelector('#court'),c=canvas.getContext('2d',{alpha:false});
+let w=0,h=0,dpr=1;
+function resize(){dpr=Math.min(devicePixelRatio||1,1.7);w=innerWidth;h=innerHeight;canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);c.setTransform(dpr,0,0,dpr,0,0)}
+addEventListener('resize',resize);resize();
+const el=id=>document.getElementById(id);
+let cpuPlay=0;
+let live=false,paused=false,scoreA=0,scoreB=0,keys={},last=0,elapsed=0,serveSide='a',state='serve',message='Toque em JOGAR para começar',pointTimer=0;
+let championshipMode=false,championshipWins=0,championshipRound=0;
+const you={x:-2.5,y:.15,jump:0,jumpStart:0,jumpDuration:760},cpu={x:2.5,y:-.1,jump:0,jumpStart:0,jumpDuration:620};
+const ally={x:-1.8,y:-1.0,jump:0,jumpStart:0,jumpDuration:700},cpuAlly={x:1.8,y:1.0,jump:0,jumpStart:0,jumpDuration:680};
+let ball={x:-2.4,y:0,z:1.1,vx:0,vy:0,vz:0}, cooldown=0, rallyHits=0, showArcUntil=0;
+let spikeEffectUntil=0, spikeStatsUntil=0, spikeHeight=0, spikeSpeed=0, boomJumpUntil=0;
+let soraPerfectSet=false;
+let youDefense=100,cpuDefense=100,youBreakNext=false,cpuBreakNext=false;
+function updateMeters(){const p=equippedPlayer();const atk=Math.max(0,Math.min(10,p?.attackLevel||0)),jmp=Math.max(0,Math.min(10,p?.jumpLevel||0));el('forceLevel').textContent='Nv. '+(p?.attackLevel||0);el('jumpLevelHud').textContent='Nv. '+(p?.jumpLevel||0);el('forceFill').style.width=(atk*10)+'%';el('jumpFill').style.width=(jmp*10)+'%';el('youDefenseFill').style.width=youDefense+'%';el('cpuDefenseFill').style.width=cpuDefense+'%';el('youDefenseText').textContent=Math.round(youDefense)+'%';el('cpuDefenseText').textContent=Math.round(cpuDefense)+'%';} 
+function drainDefense(side){if(side==='you'){youDefense=Math.max(0,youDefense-25);if(youDefense===0)youBreakNext=true;}else{cpuDefense=Math.max(0,cpuDefense-25);if(cpuDefense===0)cpuBreakNext=true;}updateMeters();}
+function brokenReceive(side){if(side==='you'){youBreakNext=false;youDefense=100;}else{cpuBreakNext=false;cpuDefense=100;}updateMeters();ball.vx=side==='you'?-8.5:8.5;ball.vy=side==='you'?clamp((you.y-ball.y)*2,-3.5,3.5):clamp((cpu.y-ball.y)*2,-3.5,3.5);ball.vz=2.8;state='flight';cooldown=.65;say(side==='you'?'💥 Defesa esgotada! A bola foi desviada para longe!':'💥 A defesa da CPU acabou! A bola foi desviada para longe!');}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function say(s){message=s;el('status').textContent=s}
+function targetOpponentY(fromY){const first=Math.abs(cpu.y-fromY),second=Math.abs(cpuAlly.y-fromY);return first<=second?cpu.y:cpuAlly.y}
+const saveKey='arenaVolleySave_v1';
+const defaultSave={coins:0,xp:0,tickets:0,pity:0,roster:[],wins:0,equippedId:'starter',lineup:{attacker:'',setter:'',central:''}};
+let save={...defaultSave};
+try{const old=JSON.parse(localStorage.getItem(saveKey)||'null');if(old&&typeof old==='object')save={...defaultSave,...old}}catch(e){}
+if(!Array.isArray(save.roster))save.roster=[];
+// Migra saves antigos e garante um atleta inicial equipável sem apagar moedas/vitórias existentes.
+if(!save.roster.some(p=>p.id==='starter'))save.roster.unshift({id:'starter',name:'Jogador Inicial',rank:'C',role:'Versátil',desc:'Seu primeiro atleta, pronto para evoluir.',attackLevel:0,jumpLevel:0});
+save.roster=save.roster.map((p,i)=>({...p,id:p.id||('player_'+i+'_'+String(p.name||'atleta').replace(/[^a-z0-9]/gi,'').slice(0,8)),attackLevel:Number.isFinite(p.attackLevel)?p.attackLevel:0,jumpLevel:Number.isFinite(p.jumpLevel)?p.jumpLevel:0}));
+if(!save.roster.some(p=>p.id===save.equippedId))save.equippedId='starter';
+if(!save.lineup||typeof save.lineup!=='object')save.lineup={attacker:'',setter:'',central:''};
+for(const slot of ['attacker','setter','central'])if(!save.roster.some(p=>p.id===save.lineup[slot]))save.lineup[slot]='';
+let recruitSerial=0;
+function equippedPlayer(){return save.roster.find(p=>p.id===save.equippedId)||save.roster[0]}
+function attackCost(p){return 100+Math.max(0,p.attackLevel||0)*100}
+function jumpCost(p){return 100+Math.max(0,p.jumpLevel||0)*100}
+function persist(){try{localStorage.setItem(saveKey,JSON.stringify(save))}catch(e){};renderEconomy()}
+function renderEconomy(){
+ const level=1+Math.floor(save.xp/100);
+ for(const [id,val] of Object.entries({coins:save.coins,level,xp:save.xp,tickets:save.tickets,shopCoins:save.coins,shopXp:save.xp,shopTickets:save.tickets,pity:`${save.pity}/50`})) {const node=el(id);if(node)node.textContent=val}
+ const p=equippedPlayer();
+ const stats=el('equippedStats');if(stats&&p)stats.innerHTML=`<b>${p.name}</b> · Rank ${p.rank}<br>💥 Ataque nível ${p.attackLevel} (próximo: ${attackCost(p)} 🪙)<br>🦘 Pulo nível ${p.jumpLevel} (próximo: ${jumpCost(p)} 🪙)`;
+ const slots=[['attacker','💥 Atacante'],['setter','🌟 Levantador'],['central','🛡️ Central']];const slotsNode=el('lineupSlots');if(slotsNode)slotsNode.innerHTML=slots.map(([key,label])=>{const p=save.roster.find(x=>x.id===save.lineup[key]);return `<div class="lineupSlot"><b>${label}:</b> ${p?`${p.name} · Rank ${p.rank}`:'Não escolhido'}</div>`}).join('');
+ const roster=el('roster');if(roster){roster.innerHTML='<b>ELENCO ('+save.roster.length+')</b>'+save.roster.map((player)=>`<div class="playerRow"><div class="playerMeta"><b>${player.name}</b> ${player.id===save.equippedId?'<span class="equippedTag">✓ CONTROLADO</span>':''}<small>Rank ${player.rank} · ${player.role}<br>💥 Ataque Nv.${player.attackLevel} · 🦘 Pulo Nv.${player.jumpLevel}${player.awakenings?`<br>🌟 Despertar ${player.awakenings}× (+${player.awakenings*5} Ataque / +${player.awakenings*5} Pulo)`:''}</small><div class="assignButtons"><button data-equip="${player.id}" ${player.id===save.equippedId?'disabled':''}>${player.id===save.equippedId?'CONTROLADO':'CONTROLAR'}</button><button data-slot="attacker" data-player="${player.id}">+ ATACANTE</button><button data-slot="setter" data-player="${player.id}">+ LEVANTADOR</button><button data-slot="central" data-player="${player.id}">+ CENTRAL</button></div></div></div>`).join('')}
+}
+const recruits=[
+ {name:'Kaito Tanaka',rank:'S',role:'Atacante explosivo',desc:'Cortada reforçada: potência base maior e escala melhor com cada nível de ataque.'},
+ {name:'Mika Hayashi',rank:'A',role:'Levantadora tática',desc:'Levantamentos precisos; a bola sobe mais alto quando ela levanta.'},
+ {name:'Sora Fujimoto',rank:'S',role:'Levantador criador',desc:'Habilidade S — Passe Milimétrico: seu levantamento potencializa a próxima cortada do Kaito quando ele está na escalação.'},
+ {name:'Ren Sato',rank:'A',role:'Líbero veloz',desc:'Recepção e defesa ágeis.'},
+ {name:'Daichi Mori',rank:'B',role:'Central bloqueador',desc:'Especialista em bloqueio perto da rede.'},
+ {name:'Akio Tachibana',rank:'A',role:'Central muralha',desc:'Bloqueio com alcance ampliado junto à rede.'},
+ {name:'Yuna Aoki',rank:'B',role:'Ponta equilibrada',desc:'Versátil em ataque e defesa.'},
+ {name:'Toma Kuroda',rank:'C',role:'Atleta iniciante',desc:'Um jogador para desenvolver.'}
+];
+function recruitPlayer(){
+ if(save.tickets<1){el('recruitResult').textContent='Você precisa de 1 bilhete. Vença uma partida ou compre um bilhete com moedas.';return}
+ save.tickets--;
+ const guaranteed=save.pity>=50;
+ if(!guaranteed)save.pity++;
+ let pool;
+ if(guaranteed)pool=recruits.filter(p=>p.rank==='S');
+ else {pool=[...recruits,...recruits.filter(p=>p.rank!=='S'),...recruits.filter(p=>p.rank==='C')];}
+ const chosen=pool[Math.floor(Math.random()*pool.length)];
+ if(guaranteed){save.pity=0;el('recruitResult').innerHTML=`✨ <b>GARANTIA S ATIVADA!</b><br>Você recrutou <b>${chosen.name}</b> — Rank S<br>${chosen.role}: ${chosen.desc}<br>Contador reiniciado para 0/50.`}
+ else el('recruitResult').innerHTML=`🎉 Novo atleta: <b>${chosen.name}</b> — Rank ${chosen.rank}<br>${chosen.role}: ${chosen.desc}`;
+ const duplicate=save.roster.find(p=>p.name===chosen.name);
+ if(duplicate){
+   duplicate.attackLevel=(duplicate.attackLevel||0)+5;
+   duplicate.jumpLevel=(duplicate.jumpLevel||0)+5;
+   duplicate.awakenings=(duplicate.awakenings||0)+1;
+   el('recruitResult').innerHTML=`🌟 <b>DESPERTAR!</b><br>Você conseguiu outro <b>${chosen.name}</b> — Rank ${chosen.rank}.<br>O duplicado foi convertido em despertar!<br><b>+5 Ataque e +5 Pulo</b> para ${duplicate.name}.<br>Despertares: ${duplicate.awakenings} · Ataque Nv.${duplicate.attackLevel} · Pulo Nv.${duplicate.jumpLevel}${guaranteed?'<br>Garantia S concluída; contador reiniciado para 0/50.':''}`;
+ }else{
+   save.roster.push({...chosen,id:'recruit_'+Date.now()+'_'+(++recruitSerial),attackLevel:0,jumpLevel:0,awakenings:0});
+ }
+ persist();
+}
+function upgradeStat(stat){const p=equippedPlayer();if(!p)return;const isAttack=stat==='attackLevel',cost=isAttack?attackCost(p):jumpCost(p);if(save.coins<cost){el('recruitResult').textContent=`Moedas insuficientes! Esta melhoria custa ${cost} moedas.`;return}save.coins-=cost;p[stat]=(p[stat]||0)+1;persist();el('recruitResult').textContent=`Melhoria aplicada em ${p.name}! ${isAttack?'Força de ataque':'Altura do pulo'} agora está no nível ${p[stat]}.`;say('Melhoria comprada!')}
+function rewardWin(){save.coins+=250;save.xp+=100;save.tickets+=1;save.wins++;persist();if(championshipMode){championshipWins++;championshipRound++;if(championshipWins>=3){save.coins+=500;save.xp+=200;save.tickets+=2;save.wins++;persist();championshipMode=false;el('recruitResult').textContent='🏆 CAMPEÕES! Recompensa final: +500 moedas, +200 XP e +2 bilhetes, além das recompensas das partidas.';say('🏆 CAMPEONATO CONQUISTADO!');}else{el('recruitResult').textContent=`Vitória no campeonato ${championshipWins}/3! +250 moedas, +100 XP e +1 bilhete. Mais uma partida se aproxima.`;say(`VITÓRIA ${championshipWins}/3 NO CAMPEONATO!`);}}else{el('recruitResult').textContent='Recompensa recebida! +250 moedas, +100 XP e +1 bilhete de recrutamento.';say('VITÓRIA! Recompensas adicionadas.')}el('shop').style.display='block';}
+renderEconomy();
+function scale(){return Math.min(w/9.8,h/6.4)}
+function P(x,y,z=0){let s=scale();return {x:w*.5+x*s*.91,y:h*.55+y*s*.39-z*s*.82,s}}
+function drawCourt(){
+ let sky=c.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#0b1c37');sky.addColorStop(.52,'#155777');sky.addColorStop(1,'#06172b');c.fillStyle=sky;c.fillRect(0,0,w,h);
+ // arena lights and crowd
+ for(let i=0;i<13;i++){let x=(i+.5)*w/13;c.fillStyle='#c8f6ff75';c.beginPath();c.arc(x,h*.18,2.3,0,Math.PI*2);c.fill()}
+ c.fillStyle='#081a30';c.fillRect(0,h*.29,w,h*.09);
+ for(let i=0;i<Math.min(95,Math.floor(w/5));i++){let x=i*w/Math.min(95,Math.floor(w/5));c.fillStyle=i%3?'#193b55':'#25506a';c.fillRect(x,h*.3+(i%4)*2,Math.max(2,w/120),h*.045)}
+ const corners=[P(-4.3,-2.05),P(4.3,-2.05),P(4.3,2.05),P(-4.3,2.05)];
+ c.beginPath();corners.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();
+ let floor=c.createLinearGradient(0,h*.38,0,h*.88);floor.addColorStop(0,'#1885a7');floor.addColorStop(1,'#075078');c.fillStyle=floor;c.fill();c.strokeStyle='#e6f8ff';c.lineWidth=2;c.stroke();
+ function line(x1,y1,x2,y2,col='#e6f8ff',lw=1.5){let a=P(x1,y1),b=P(x2,y2);c.strokeStyle=col;c.lineWidth=lw;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}
+ line(-4.3,0,4.3,0,'#fff',2.5);line(-2.8,-2.05,-2.8,2.05);line(2.8,-2.05,2.8,2.05);
+ // net
+ let n1=P(0,-2.05,1.28),n2=P(0,2.05,1.28),b1=P(0,-2.05,.93),b2=P(0,2.05,.93);
+ c.strokeStyle='#eaf8ff';c.lineWidth=2;c.beginPath();c.moveTo(n1.x,n1.y);c.lineTo(n2.x,n2.y);c.moveTo(b1.x,b1.y);c.lineTo(b2.x,b2.y);c.stroke();
+ c.strokeStyle='#ccecff88';c.lineWidth=1;
+ for(let i=1;i<15;i++){let t=i/15;c.beginPath();c.moveTo(n1.x+(n2.x-n1.x)*t,n1.y+(n2.y-n1.y)*t);c.lineTo(b1.x+(b2.x-b1.x)*t,b1.y+(b2.y-b1.y)*t);c.stroke()}
+ for(let x of [-.05,.05]){let a=P(x,0),b=P(x,0,1.35);c.strokeStyle='#f3fbff';c.lineWidth=3;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}
+}
+function drawPlayer(p,color,label){
+ // Atletas estilizados com silhueta humana, uniforme, cabelo, rosto, joelheiras e poses animadas.
+ const now=performance.now();
+ let phase=1,height=0,airborne=false;
+ if(p.jumpStart){phase=(now-p.jumpStart)/p.jumpDuration;if(phase>=1){p.jumpStart=0;phase=1}else{airborne=true;height=Math.sin(Math.PI*phase)*(1.28+(p===you?((equippedPlayer()?.jumpLevel||0)*.10):0))}}
+ p.jump=height;
+ const act=(p.actionUntil||0)>now?p.action:'idle';
+ const actT=act==='idle'?0:1-(p.actionUntil-now)/Math.max(1,p.actionDuration||420);
+ const pulse=Math.sin(now/115+(p.x||0))*0.035;
+ let a=P(p.x,p.y),body=P(p.x,p.y,.62+height),head=P(p.x,p.y,1.05+height);
+ let crouch=act==='receive'?Math.sin(Math.min(1,actT*2)*Math.PI)*.34:0;
+ let setRaise=act==='set'?Math.sin(Math.min(1,actT*1.3)*Math.PI)*.55:0;
+ let swing=act==='spike'?Math.sin(Math.min(1,actT*1.25)*Math.PI):0;
+ let blockRaise=act==='block'?Math.sin(Math.min(1,actT*1.4)*Math.PI)*.8:0;
+ const name=String(label||'').toLowerCase();
+ const hair=name.includes('sora')?'#d8e1f6':name.includes('ren')?'#a96a3c':name.includes('mika')?'#262039':name.includes('ayumi')?'#201b2c':name.includes('cpu')?'#7a2832':name.includes('kaito')?'#171b24':'#293347';
+ const jersey=name.includes('cpu')?'#b92f48':name.includes('sora')?'#f0f3fb':name.includes('mika')?'#22273f':name.includes('ayumi')?'#b92d4e':color;
+ const skin='#e9b99a';
+ c.fillStyle='#02101c70';c.beginPath();c.ellipse(a.x,a.y+2,Math.max(5,11-height*2),4,0,0,Math.PI*2);c.fill();
+ c.save();c.translate(body.x,body.y);c.rotate(airborne?(phase<.5?-.13:.12):pulse);
+ // shorts and legs, with pose variations for reception and landing
+ c.fillStyle='#111c2b';c.beginPath();c.roundRect(-7,7-crouch*2,14,8,2);c.fill();
+ c.strokeStyle=skin;c.lineWidth=3.6;c.lineCap='round';c.beginPath();
+ if(airborne){c.moveTo(-3,12);c.lineTo(-9,19);c.lineTo(-12,18);c.moveTo(3,12);c.lineTo(9,17);c.lineTo(12,16)}
+ else if(act==='receive'){c.moveTo(-3,12);c.lineTo(-8,18);c.lineTo(-11,18);c.moveTo(3,12);c.lineTo(8,18);c.lineTo(11,18)}
+ else {c.moveTo(-3,12);c.lineTo(-4,22);c.lineTo(-7,22);c.moveTo(3,12);c.lineTo(4,22);c.lineTo(7,22)}
+ c.stroke();
+ // socks, shoes and knee pads
+ c.fillStyle='#e9f4ff';c.fillRect(-5,18,3,3);c.fillRect(3,18,3,3);c.fillStyle='#091321';c.fillRect(-9,21,6,3);c.fillRect(3,21,6,3);
+ c.fillStyle='#243a50';c.beginPath();c.ellipse(-6,15,2.2,2.5,0,0,Math.PI*2);c.ellipse(6,15,2.2,2.5,0,0,Math.PI*2);c.fill();
+ // torso, jersey panels and number
+ c.fillStyle=jersey;c.beginPath();c.moveTo(-7,-9);c.lineTo(-5,-12);c.lineTo(5,-12);c.lineTo(7,-9);c.lineTo(8,7);c.lineTo(5,10);c.lineTo(-5,10);c.lineTo(-8,7);c.closePath();c.fill();
+ c.fillStyle='#ffffff26';c.fillRect(-5,-8,2,15);c.fillStyle='#071a2a';c.fillRect(3,-7,2,13);
+ c.fillStyle=jersey==='#f0f3fb'?'#15253b':'#f5fbff';c.font='bold 7px system-ui';c.textAlign='center';c.fillText(name.includes('sora')?'7':name.includes('ren')?'9':name.includes('mika')?'5':name.includes('ayumi')?'3':name.includes('cpu')?'6':'10',0,2);
+ // arms: reception platform, overhead set, or attacking arm whip
+ c.strokeStyle=skin;c.lineWidth=3.6;c.lineCap='round';c.beginPath();
+ if(act==='receive'){
+   c.moveTo(-6,-5);c.lineTo(-10,0);c.lineTo(-3,4);c.moveTo(6,-5);c.lineTo(10,0);c.lineTo(3,4);
+ }else if(act==='set'){
+   c.moveTo(-6,-5);c.lineTo(-8,-13-setRaise*5);c.lineTo(-3,-17-setRaise*5);c.moveTo(6,-5);c.lineTo(8,-13-setRaise*5);c.lineTo(3,-17-setRaise*5);
+ }else{
+   c.moveTo(-6,-5);c.lineTo(-12,-1);
+   if(airborne||act==='spike'||act==='block'){
+     c.moveTo(6,-5);c.lineTo(10,-12-swing*5-blockRaise*5);c.lineTo(8-swing*7,-19-swing*7-blockRaise*3);
+   }else{c.moveTo(6,-5);c.lineTo(12,1);}
+ }
+ c.stroke();
+ // wrist bands
+ c.fillStyle='#dff8ff';c.fillRect(-12,-2,4,2);c.fillRect(8,-13,4,2);
+ c.restore();
+ // neck and expressive face
+ c.fillStyle=skin;c.fillRect(head.x-2,head.y+4,4,5);
+ c.fillStyle=skin;c.beginPath();c.ellipse(head.x,head.y,6.8,8,0,0,Math.PI*2);c.fill();
+ c.fillStyle=hair;c.beginPath();c.moveTo(head.x-7,head.y-1);c.lineTo(head.x-6,head.y-8);c.lineTo(head.x-2,head.y-10);c.lineTo(head.x+4,head.y-8);c.lineTo(head.x+7,head.y-3);c.lineTo(head.x+3,head.y-4);c.lineTo(head.x,head.y-1);c.lineTo(head.x-2,head.y-5);c.lineTo(head.x-5,head.y+1);c.closePath();c.fill();
+ c.fillStyle='#15263a';c.fillRect(head.x-4,head.y,2.2,1.5);c.fillRect(head.x+2,head.y,2.2,1.5);
+ c.strokeStyle='#7b4939';c.lineWidth=.7;c.beginPath();c.moveTo(head.x-1,head.y+4);c.lineTo(head.x+2,head.y+4);c.stroke();
+ c.fillStyle='#eafaff';c.font='bold 8px system-ui';c.textAlign='center';c.fillText(label,body.x,body.y+34);
+} 
+function animatePlayer(p,action,duration=430){p.action=action;p.actionUntil=performance.now()+duration;p.actionDuration=duration;}
+
+function drawTrajectory(){
+ // Linha pontilhada prevista, inspirada em jogos de vôlei arcade.
+ if(performance.now()>showArcUntil || state==='serve' || state==='dead')return;
+ const gravity=9.3, step=.075;
+ c.save();
+ c.setLineDash([3,6]);c.lineWidth=2.2;c.strokeStyle='#fff6a8';c.shadowColor='#6beaff';c.shadowBlur=7;
+ c.beginPath();let started=false;
+ for(let t=0;t<=1.45;t+=step){
+  const z=ball.z+ball.vz*t-.5*gravity*t*t;
+  if(z<.08)break;
+  const q=P(ball.x+ball.vx*t,ball.y+ball.vy*t,z);
+  if(!started){c.moveTo(q.x,q.y);started=true}else c.lineTo(q.x,q.y);
+ }
+ c.stroke();c.setLineDash([]);
+ // kleine Zielmarkierung am Ende der sichtbaren Flugbahn
+ const t=Math.min(1.35,Math.max(0,ball.vz/gravity*1.7));
+ const z=Math.max(.1,ball.z+ball.vz*t-.5*gravity*t*t);
+ const q=P(ball.x+ball.vx*t,ball.y+ball.vy*t,z);
+ c.fillStyle='#fff6a8';c.beginPath();c.arc(q.x,q.y,3,0,Math.PI*2);c.fill();
+ c.restore();
+}
+function drawLightning(){
+ const now=performance.now();if(now>spikeEffectUntil||equippedPlayer()?.name!=='Kaito Tanaka')return;
+ const p=P(ball.x,ball.y,ball.z),fade=Math.max(0,(spikeEffectUntil-now)/520);
+ c.save();c.globalAlpha=Math.min(1,fade+.25);c.strokeStyle='#8af7ff';c.lineWidth=2.5;c.shadowColor='#19bfff';c.shadowBlur=18;
+ for(let j=0;j<4;j++){const a=now*.018+j*Math.PI/2,rad=15+Math.sin(now*.035+j)*3;c.beginPath();let x=p.x+Math.cos(a)*rad,y=p.y+Math.sin(a)*rad; c.moveTo(x,y);for(let k=1;k<=4;k++){const rr=rad+k*5,ang=a+(Math.random()-.5)*.75;x=p.x+Math.cos(ang)*rr;y=p.y+Math.sin(ang)*rr;c.lineTo(x,y)}c.stroke()}
+ c.restore();
+}
+function drawSpikeStats(){if(performance.now()>spikeStatsUntil){el('spikeStats').style.display='none';return}el('spikeStats').style.display='block'}
+
+function drawBoomJump(){
+ const now=performance.now(); if(now>boomJumpUntil)return;
+ const lift=you.jump||0, p=P(you.x,you.y,0.55+lift), fade=Math.max(0,(boomJumpUntil-now)/850);
+ c.save();c.globalAlpha=fade;c.strokeStyle='#72f5ff';c.shadowColor='#00bfff';c.shadowBlur=18;c.lineWidth=3;
+ c.beginPath();c.ellipse(p.x,p.y+18,18+(1-fade)*36,7+(1-fade)*15,0,0,Math.PI*2);c.stroke();
+ for(let j=0;j<7;j++){const ang=j*Math.PI*2/7+now*.006;const r=17+(1-fade)*13;
+  c.beginPath();c.moveTo(p.x+Math.cos(ang)*r,p.y+Math.sin(ang)*r*.55);
+  c.lineTo(p.x+Math.cos(ang+.2)* (r+10),p.y+Math.sin(ang+.2)*(r+10)*.55);
+  c.lineTo(p.x+Math.cos(ang-.1)*(r+22),p.y+Math.sin(ang-.1)*(r+22)*.55);c.stroke();}
+ c.fillStyle='#e8ffff';c.font='bold 14px system-ui';c.textAlign='center';c.fillText('BOOM JUMP!',p.x,p.y-35);c.restore();
+}
+function drawBall(){
+ let p=P(ball.x,ball.y,ball.z);c.fillStyle='#00101c55';c.beginPath();c.ellipse(p.x,p.y+ball.z*1.3,7,3,0,0,Math.PI*2);c.fill();
+ let r=6+ball.z*.35;c.fillStyle='#fff';c.beginPath();c.arc(p.x,p.y,r,0,Math.PI*2);c.fill();c.strokeStyle='#0c94c2';c.lineWidth=2;c.beginPath();c.arc(p.x,p.y,r*.72,-1.2,1.4);c.stroke();c.beginPath();c.arc(p.x,p.y,r*.72,2,4.6);c.stroke()
+}
+function reset(side){
+ cpuPlay=0;cooldown=0;serveSide=side;state='serve';elapsed=0;rallyHits=0;soraPerfectSet=false;you.x=-2.5;you.y=.1;you.jump=0;you.jumpStart=0;cpu.x=2.5;cpu.y=-.1;cpu.jump=0;ally.x=-1.8;ally.y=-1.0;ally.jumpStart=0;cpuAlly.x=1.8;cpuAlly.y=1.0;cpuAlly.jumpStart=0;
+ ball={x:side==='a'?-2.3:2.3,y:0,z:1.15,vx:0,vy:0,vz:0};say(side==='a'?'Seu saque! Prepare a jogada.':'Saque da CPU! Use RECEPÇÃO.');
+}
+function point(winner){
+ if(state==='dead')return;state='dead';pointTimer=1.05;
+ if(winner==='a'){scoreA++;el('scoreA').textContent=scoreA;say('PONTO SEU!')}else{scoreB++;el('scoreB').textContent=scoreB;say('Ponto da CPU!')}
+ ball.vx=ball.vy=ball.vz=0;
+ if(scoreA>=5){live=false;rewardWin()}else if(scoreB>=5){live=false;if(championshipMode){championshipMode=false;championshipWins=0;championshipRound=0;say('Campeonato encerrado. Treine e tente novamente!')}else say('A CPU venceu esta partida. Tente novamente!');el('start').style.display='flex';el('play').textContent='JOGAR NOVAMENTE';}
+}
+function action(a){
+ if(!live||paused||state==='dead')return;
+ if(a==='travelServe'){
+  if(state!=='serve'||serveSide!=='a'){say('🔥 O SAQUE VIAGEM só pode ser usado quando for seu saque!');return;}
+  // Primeiro toque: lançar a bola para cima; o jogador deve saltar e bater nela.
+  ball.x=you.x+.18;ball.y=you.y;ball.z=1.65;ball.vx=.05;ball.vy=0;ball.vz=7.0;state='serveToss';elapsed=0;you.jumpStart=0;animatePlayer(you,'set',420);
+  say('🏐 Bola lançada! Toque em PULAR e depois em CORTADA no ar para completar o saque viagem!');return;
+ }
+ const nearYou=Math.hypot(ball.x-you.x,ball.y-you.y)<(equippedPlayer()?.name==='Ren Sato'?1.9:1.5);
+ if(a==='receive'){
+  animatePlayer(you,'receive',430);
+  if(ball.x<.25&&nearYou&&ball.z<2.8){if(state==='spike'||state==='flight'){if(youBreakNext){brokenReceive('you');return}drainDefense('you')}ball.vx=1.5;ball.vy=clamp((you.y-ball.y)*1.0,-1.3,1.3);ball.vz=4.8;state='pass';showArcUntil=performance.now()+650;say('Recepção feita! Levante a bola.')}
+  else say('Chegue mais perto da bola para receber.');
+ }
+ if(a==='set'){
+  animatePlayer(you,'set',460);
+  if(ball.x<.65&&ball.x> -3.8&&Math.hypot(ball.x-you.x,ball.y-you.y)<2.1&&ball.z<3.3){ball.vx=1.05;ball.vy=clamp((0-ball.y)*.35,-.55,.55);const setter=save.roster.find(p=>p.id===save.lineup.setter);const setterBonus=(setter?.name==='Mika Hayashi'||equippedPlayer()?.name==='Mika Hayashi')?.7:0;const liftBonus=Math.min(2.5,(equippedPlayer()?.jumpLevel||0)*.25);ball.vz=7.25+setterBonus+liftBonus;state='set';showArcUntil=performance.now()+1500;say(soraPerfectSet?'🌟 PASSE MILIMÉTRICO S! Kaito, prepare a cortada!':'Levantamento alto! Siga a trajetória e corte!')}
+  else say('Aproxime-se da bola para levantar.');
+ }
+ if(a==='ability'){
+  animatePlayer(ally,'set',650);
+  const setter=save.roster.find(p=>p.id===save.lineup.setter);
+  if(setter?.name!=='Sora Fujimoto'){say('Equipe Sora Fujimoto como levantador para usar o Passe Milimétrico!');return}
+  if(ball.x>=0||ball.z>4.0||state==='serve'){say('Espere a bola chegar ao seu lado para ativar o Passe Milimétrico!');return}
+  if(cooldown>0){say('Passe Milimétrico recarregando!');return}
+  ball.x=-0.88;ball.y=clamp(you.y*0.55+ball.y*0.45,-1.15,1.15);ball.vx=0.12;ball.vy=clamp((you.y-ball.y)*0.28,-0.2,0.2);const liftBonus=Math.min(2.5,(equippedPlayer()?.jumpLevel||0)*.25);ball.vz=5.65+liftBonus;state='set';soraPerfectSet=true;cooldown=1.1;showArcUntil=performance.now()+1600;say('🌟 PASSE MILIMÉTRICO ATIVADO! Bola perfeita na frente da rede — pule e corte com Kaito!');return;
+ }
+ if(a==='jump'){
+  you.jumpStart=performance.now();you.jumpDuration=760;
+  if((equippedPlayer()?.jumpLevel||0)>=10){boomJumpUntil=performance.now()+850;say('💥⚡ BOOM JUMP! PULO MÁXIMO!');}else say('Salto! Toque em CORTADA enquanto estiver no ar.');
+ }
+ if(a==='block'){
+  animatePlayer(you,'block',460);
+  const p=equippedPlayer();
+  if(!/central|bloqueador/i.test(p?.role||'')){say('O BLOQUEIO especial é para jogadores centrais! Recrute ou equipe um central.');return}
+  const now=performance.now();
+  const phase=you.jumpStart?(now-you.jumpStart)/you.jumpDuration:1;
+  const airborne=you.jumpStart!==0&&phase>0.08&&phase<0.94;
+  if(!airborne){you.jumpStart=now;you.jumpDuration=760;say('Central saltando para bloquear! Toque BLOQUEIO no tempo da cortada.');return}
+  if(ball.x<1.25&&ball.x>-.85&&ball.z>1.0&&ball.z<3.3&&ball.vx<0){ball.vx=-(4.6+(/muralha/i.test(p.name)?1.0:0));ball.vy=clamp((cpu.y-ball.y)*.65,-1.8,1.8);ball.vz=1.6;state='flight';cooldown=.45;say('🧱 BLOQUEIO DO CENTRAL! Bola devolvida!')}
+  else say('Espere a cortada adversária perto da rede e tente bloquear!');
+ }
+ if(a==='spike'){
+  const now=performance.now();
+  // Finalização do saque viagem: exige salto e contato com a bola lançada.
+  if(state==='serveToss'&&serveSide==='a'){
+   const phase=you.jumpStart?(now-you.jumpStart)/you.jumpDuration:1;
+   const airborne=you.jumpStart!==0&&phase>0.03&&phase<1.08;
+   const closeToToss=Math.hypot(ball.x-you.x,ball.y-you.y)<1.85;
+   if(airborne&&closeToToss&&ball.z>1.25&&ball.z<5.2){
+    const p=equippedPlayer();const atk=Math.max(0,Math.min(10,p?.attackLevel||0));
+    animatePlayer(you,'spike',520);ball.x=you.x+.35;ball.vx=8.2+atk*.32;const targetY=targetOpponentY(ball.y);ball.vy=clamp((targetY-ball.y)*2.0,-3.0,3.0);ball.vz=-1.8;state='flight';elapsed=0;spikeEffectUntil=now+700;spikeStatsUntil=now+1800;spikeHeight=ball.z;spikeSpeed=Math.round(Math.hypot(ball.vx,ball.vy,ball.vz)*22);el('spikeStats').innerHTML='🔥 SAQUE VIAGEM!<br><strong>Altura da batida: '+spikeHeight.toFixed(2)+' m</strong><br><strong>Velocidade estimada: '+spikeSpeed+' km/h</strong>';you.jumpStart=0;say('🔥 SAQUE VIAGEM COMPLETO! Salto e ataque no ar!');return;
+   }
+   say('Lance a bola, pule e acerte CORTADA no ar quando estiver perto dela!');return;
+  }
+  const phase=you.jumpStart?(now-you.jumpStart)/you.jumpDuration:1;
+  const airborne=you.jumpStart!==0&&phase>0.10&&phase<0.94;
+  // Hitbox mais tolerante: considera distância horizontal e altura alcançável.
+  const dx=ball.x-you.x, dy=ball.y-you.y;
+  const contactDistance=Math.hypot(dx,dy);
+  const reachableHeight=ball.z>0.85&&ball.z<(3.05+(equippedPlayer()?.jumpLevel||0)*.10);
+  const attackZone=ball.x<1.0&&ball.x>-2.15;
+  if(airborne&&attackZone&&reachableHeight&&contactDistance<1.9){
+   animatePlayer(you,'spike',480);
+   const isKaito=equippedPlayer()?.name==='Kaito Tanaka';const kaitoPower=isKaito?2.8:0;const soraCombo=(isKaito&&soraPerfectSet)?1.8:0;ball.vx=6.6+(equippedPlayer()?.attackLevel||0)*.85+kaitoPower+soraCombo;const targetY=targetOpponentY(ball.y);ball.vy=clamp((targetY-ball.y)*1.8,-3.0,3.0);ball.vz=-2.0;state='spike';showArcUntil=now+700;if(soraPerfectSet)say('⚡ COMBO SORA + KAITO! CORTADA POTENCIALIZADA!');soraPerfectSet=false;
+   spikeHeight=Math.max(0,ball.z);spikeSpeed=Math.round(Math.hypot(ball.vx,ball.vy,ball.vz)*18);
+   el('spikeHeight').textContent=`Altura da batida: ${spikeHeight.toFixed(2)} m`;el('spikeSpeed').textContent=`Velocidade estimada: ${spikeSpeed} km/h`;spikeStatsUntil=now+2600;
+   spikeEffectUntil=equippedPlayer()?.name==='Kaito Tanaka'?now+650:0;say('CORTADA! '+spikeSpeed+' km/h');
+   you.jumpStart=0;
+  } else say('Aproxime-se da bola, pule e toque em CORTADA durante o salto!');
+ }
+}
+function update(dt){
+ if(!live||paused)return;
+ elapsed+=dt;
+ const speed=2.8*dt;
+ if(keys.left)you.x-=speed;if(keys.right)you.x+=speed;if(keys.up)you.y-=speed;if(keys.down)you.y+=speed;
+ you.x=clamp(you.x,-4.0,-.25);you.y=clamp(you.y,-1.75,1.75);
+ // Modo 2v2: levantador aliado acompanha a jogada e prepara a bola quando Kaito não está em posição.
+ ally.x+=((ball.x<0?clamp(ball.x+.45,-2.8,-1.0):-1.8)-ally.x)*Math.min(1,dt*2.2);
+ ally.y+=(clamp(ball.y-.45,-1.65,1.65)-ally.y)*Math.min(1,dt*2.0);
+ cpuAlly.x+=(clamp(ball.x-.65,.8,3.3)-cpuAlly.x)*Math.min(1,dt*1.9);
+ cpuAlly.y+=(clamp(ball.y+.4,-1.65,1.65)-cpuAlly.y)*Math.min(1,dt*1.8);
+ if(ball.x<0 && ball.x> -3.7 && state==='pass' && ball.z>0.7 && ball.z<2.7 && Math.hypot(ball.x-ally.x,ball.y-ally.y)<1.15 && cooldown<=0){
+  // Levantamento direcionado: arco curto e alto, colocado na frente da rede do nosso lado.
+  // Mantém a bola longe da trajetória que a fazia atravessar a rede antes da cortada.
+  ball.x=-0.92;ball.y=clamp(you.y*0.72+ball.y*0.28,-1.25,1.25);
+  ball.vx=0.12;ball.vy=clamp((you.y-ball.y)*0.35,-0.25,0.25);const liftBonus=Math.min(2.5,(equippedPlayer()?.jumpLevel||0)*.25);ball.vz=5.25+liftBonus;
+  state='set';soraPerfectSet=false;cooldown=.8;
+  say('Levantamento na frente da rede! Pule e corte!')
+ }
+ if(state==='serve'){
+  if(serveSide==='b'&&elapsed>1.0){ball.vx=-3.4;ball.vy=(Math.random()-.5)*1.4;ball.vz=4.5;state='flight';elapsed=0;say('Receba o saque!')}
+  else if(serveSide==='a'&&elapsed>4.0){ball.vx=3.1;const targetY=targetOpponentY(ball.y);ball.vy=clamp((targetY-ball.y)*1.4,-2.2,2.2);ball.vz=4.5;state='flight';elapsed=0;say('Saque normal direcionado ao adversário! Prepare o ataque.')}
+  return;
+ }
+ if(state==='dead'){pointTimer-=dt;if(pointTimer<=0)reset(scoreA<=scoreB?'b':'a');return}
+ // O companheiro cobre bolas baixas próximas no nosso lado, evitando que o 2v2 seja apenas visual.
+ const allyNear=Math.hypot(ball.x-ally.x,ball.y-ally.y)<0.82;
+ if(ball.x<-.15&&ball.x>-3.9&&ball.z>0.12&&ball.z<1.45&&allyNear&&cooldown<=0&&(state==='flight'||state==='spike')){
+  if(youBreakNext){brokenReceive('you');}else{if(state==='spike'||state==='flight')drainDefense('you');animatePlayer(ally,'receive',420);ball.vx=1.25;ball.vy=clamp((you.y-ball.y)*.55,-.85,.85);ball.vz=4.25;state='pass';cooldown=.48;say('🤝 Seu levantador cobriu a bola! Prepare o ataque!');}
+ }
+ // Se um central estiver escalado, ele tenta fechar a rede automaticamente contra ataques da CPU.
+ const central=save.roster.find(p=>p.id===save.lineup.central);
+ if(central&&/central|bloqueador|muralha/i.test(central.role||'')&&ball.x>-.78&&ball.x<.25&&ball.z>1.0&&ball.z<3.1&&ball.vx<0&&cpuPlay===0&&cooldown<=0){
+  ball.vx=-(4.0+(/muralha/i.test(central.name)?1.0:0));ball.vy=clamp((cpu.y-ball.y)*.45,-1.4,1.4);ball.vz=1.7;state='flight';cooldown=.65;say('🧱 BLOQUEIO AUTOMÁTICO DO CENTRAL!');
+ }
+ // CPU acompanha a bola e executa uma jogada em três toques: recepção, levantamento e ataque.
+ if(ball.x>0){
+  cpu.x+=(clamp(ball.x+.25,.55,4.0)-cpu.x)*Math.min(1,dt*2.8);
+  cpu.y+=(clamp(ball.y,-1.7,1.7)-cpu.y)*Math.min(1,dt*2.4);
+ }
+ ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.z+=ball.vz*dt;ball.vz-=9.3*dt;
+
+ const now=performance.now();
+ const cpuPhase=cpu.jumpStart?(now-cpu.jumpStart)/cpu.jumpDuration:1;
+ const cpuAirborne=cpu.jumpStart!==0&&cpuPhase>0.16&&cpuPhase<0.88;
+ const cpuNearBall=Math.hypot(ball.x-cpu.x,ball.y-cpu.y)<0.72;
+
+ // Primeiro toque: recepção quando a bola chega ao lado da CPU.
+ if(ball.x>0.25&&ball.x<4.0&&ball.z>0.12&&ball.z<1.65&&cpuNearBall&&cooldown<=0&&cpuPlay===0){
+  if(state==='spike'||state==='flight'){if(cpuBreakNext){brokenReceive('cpu');}else{drainDefense('cpu');animatePlayer(cpu,'receive',420);ball.vx=-0.35;ball.vy=0;ball.vz=4.0;state='pass';cpuPlay=1;cooldown=.45;say('A CPU recebeu!')}}else{animatePlayer(cpu,'receive',420);ball.vx=-0.35;ball.vy=0;ball.vz=4.0;state='pass';cpuPlay=1;cooldown=.45;say('A CPU recebeu!');}
+ }
+ // Segundo toque: levantamento alto para a própria zona de ataque.
+ else if(cpuPlay===1&&ball.x>0.0&&ball.x<3.8&&ball.z>0.45&&ball.z<2.4&&cpuNearBall&&cooldown<=0){
+  animatePlayer(cpu,'set',480);ball.vx=-0.15;ball.vy=0;ball.vz=6.0;state='set';cpuPlay=2;cooldown=.55;say('A CPU levantou para atacar!');
+ }
+ // A CPU precisa saltar e só ataca no ar, com a bola dentro da janela de alcance.
+ if(cpuPlay===2&&ball.x>0.05&&ball.x<3.8&&ball.z>1.0&&ball.z<2.55&&cpuNearBall&&!cpu.jumpStart&&cooldown<=0){
+  cpu.jumpStart=now;cpu.jumpDuration=620;
+ }
+ if(cpuPlay===2&&cpuAirborne&&ball.x>0.0&&ball.x<3.9&&ball.z>0.9&&ball.z<2.65&&cpuNearBall&&cooldown<=0){
+  animatePlayer(cpu,'spike',480);ball.vx=-4.3;ball.vy=clamp((you.y-ball.y)*.65,-2.0,2.0);ball.vz=2.7;state='flight';cpuPlay=0;cooldown=1.0;say('A CPU saltou e cortou!');
+ }
+ cooldown=Math.max(0,cooldown-dt);
+ if(ball.x<.08&&ball.x>-.08&&ball.z<1.28){ball.vx*=-.5;ball.vz=Math.max(ball.vz,1.2)}
+ if(ball.z<.12){
+  if(state==='serveToss'&&serveSide==='a'){
+   // O saque viagem não deve marcar ponto automaticamente se o jogador perder o tempo; permita tentar novamente.
+   ball.z=.12;ball.vx=ball.vy=ball.vz=0;state='serve';elapsed=0;you.jumpStart=0;say('A bola caiu! Toque em SAQUE VIAGEM para tentar novamente.');return;
+  }
+  ball.z=.12;
+  const wentOut=Math.abs(ball.x)>4.3||Math.abs(ball.y)>2.05;
+  point(ball.x<0?'b':'a');
+  if(wentOut) say('BOLA FORA! PONTO MARCADO.');
+ }
+ if((Math.abs(ball.x)>4.4||Math.abs(ball.y)>2.25)&&state!=='serveToss'){
+  point(ball.x<0?'b':'a');
+  say('BOLA FORA! PONTO MARCADO.');
+ }
+}
+function frame(now){updateMeters();const skillButton=el('setterSkill');if(skillButton){skillButton.style.opacity=(cooldown>0||!save.roster.some(p=>p.id===save.lineup.setter&&p.name==='Sora Fujimoto'))?'.72':'1';skillButton.title=cooldown>0?'Habilidade recarregando':'Passe Milimétrico';}let dt=Math.min(.032,(now-(last||now))/1000);last=now;update(dt);drawCourt();drawPlayer(you,'#1bd1ed',(equippedPlayer()?.name||'KAITO').slice(0,12));drawPlayer(ally,'#55e6a5',(save.roster.find(p=>p.id===save.lineup.setter)?.name||'LEVANTADOR').slice(0,12));drawPlayer(cpu,'#ef5c78','CPU');drawPlayer(cpuAlly,'#f6a0b0','CPU 2');drawTrajectory();drawBall();drawLightning();drawSpikeStats();drawBoomJump();requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+document.querySelectorAll('[data-move]').forEach(b=>{
+ const k=b.dataset.move;
+ const down=e=>{e.preventDefault();keys[k]=true;b.classList.add('held')};
+ const up=e=>{e.preventDefault();keys[k]=false;b.classList.remove('held')};
+ b.addEventListener('pointerdown',down);['pointerup','pointercancel','pointerleave'].forEach(t=>b.addEventListener(t,up));
+});
+document.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();action(b.dataset.act);b.classList.add('held');setTimeout(()=>b.classList.remove('held'),130)}));
+function startMatch(isChampionship){championshipMode=!!isChampionship;if(championshipMode&&championshipRound===0)championshipWins=0;el('start').style.display='none';el('shop').style.display='none';live=true;paused=false;youDefense=cpuDefense=100;youBreakNext=cpuBreakNext=false;updateMeters();scoreA=scoreB=0;el('scoreA').textContent='0';el('scoreB').textContent='0';el('pause').textContent='Ⅱ';reset('a')}
+el('play').onclick=()=>startMatch(false);
+el('championshipBtn').onclick=()=>{championshipRound=0;championshipWins=0;startMatch(true);say('🏆 Campeonato iniciado: vença 3 partidas!')};
+el('shopBtn').onclick=()=>{paused=true;el('shop').style.display='block';renderEconomy()};
+el('openShopStart').onclick=()=>{el('shop').style.display='block';renderEconomy()};
+el('playAgain').onclick=()=>{el('shop').style.display='none';if(championshipMode){startMatch(true);say(`🏆 Campeonato: vitória ${championshipWins}/3. Próxima partida!`)}else startMatch(false)};
+el('closeShop').onclick=()=>{el('shop').style.display='none';if(live)paused=false;else el('start').style.display='flex'};
+el('recruit').onclick=recruitPlayer;
+el('upgradeAttack').onclick=()=>upgradeStat('attackLevel');
+el('upgradeJump').onclick=()=>upgradeStat('jumpLevel');
+el('roster').addEventListener('click',e=>{const slotButton=e.target.closest('[data-slot]');if(slotButton){const player=save.roster.find(p=>p.id===slotButton.dataset.player);if(!player)return;save.lineup[slotButton.dataset.slot]=player.id;persist();el('recruitResult').textContent=`${player.name} entrou na escalação como ${slotButton.dataset.slot==='attacker'?'atacante':slotButton.dataset.slot==='setter'?'levantador':'central'}.`;return}const b=e.target.closest('[data-equip]');if(!b)return;const player=save.roster.find(p=>p.id===b.dataset.equip);if(!player)return;save.equippedId=player.id;persist();el('recruitResult').textContent=`${player.name} agora está selecionado para controle.`;say('Jogador selecionado: '+player.name)});
+el('buyTicket').onclick=()=>{if(save.coins<300){el('recruitResult').textContent='Moedas insuficientes. Ganhe uma partida para receber moedas.';return}save.coins-=300;save.tickets++;persist();el('recruitResult').textContent='Bilhete comprado! Agora você pode recrutar um atleta.'};
+el('showHelp').onclick=()=>{const a=el('help');a.style.display=a.style.display==='block'?'none':'block'};
+el('pause').onclick=()=>{if(!live)return;paused=!paused;el('pause').textContent=paused?'▶':'Ⅱ';say(paused?'Partida pausada':'Partida em andamento')};
+})();
+</script>
+</body>
+</html>
